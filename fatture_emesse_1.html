@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard Fatture Emesse</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#0f1117;--surface:#181c27;--surface2:#1e2334;--border:#2a3045;--accent:#4f8ef7;--accent2:#34d399;--accent3:#f59e0b;--accent4:#f87171;--text:#e8eaf0;--muted:#6b7280}
+body{background:var(--bg);color:var(--text);font-family:system-ui,sans-serif;padding:24px;min-height:100vh}
+.header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:22px;flex-wrap:wrap;gap:12px}
+.header h1{font-size:21px;font-weight:600;letter-spacing:-.5px}
+.header p{color:var(--muted);font-size:12px;margin-top:3px;font-family:monospace}
+.badge{background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:5px 12px;font-size:11px;font-family:monospace;color:var(--accent2)}
+
+.loading{text-align:center;padding:80px 20px;color:var(--muted);font-family:monospace;font-size:14px;line-height:2.4}
+.spinner{display:inline-block;width:22px;height:22px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite;margin-bottom:14px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.error-box{background:#2a1a1a;border:1px solid var(--accent4);border-radius:10px;padding:20px;color:var(--accent4);font-size:13px;margin:20px 0;font-family:monospace;line-height:2}
+.warn-box{background:#2a2318;border:1px solid var(--accent3);border-radius:10px;padding:14px 18px;color:var(--accent3);font-size:12px;margin-bottom:16px;font-family:monospace;line-height:1.7;display:none}
+.retry-btn{background:var(--accent);color:#fff;border:none;padding:9px 20px;border-radius:7px;font-size:13px;cursor:pointer;margin-top:12px}
+
+.filters{display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap;align-items:center}
+.fl{font-size:11px;color:var(--muted);font-family:monospace}
+select{background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:8px 14px;border-radius:8px;font-size:13px;outline:none;cursor:pointer}
+select:focus,select:hover{border-color:var(--accent)}
+
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-bottom:18px}
+.kpi{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:18px;position:relative;overflow:hidden}
+.kpi::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--kc)}
+.kpi-label{font-size:10px;color:var(--muted);font-family:monospace;text-transform:uppercase;letter-spacing:.5px;margin-bottom:7px}
+.kpi-value{font-size:24px;font-weight:600;font-family:monospace;color:var(--kc);line-height:1.1}
+.kpi-sub{font-size:11px;color:var(--muted);margin-top:5px;font-family:monospace}
+
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
+@media(max-width:900px){.grid2{grid-template-columns:1fr}}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:20px}
+.card-title{font-size:10px;color:var(--muted);font-family:monospace;text-transform:uppercase;letter-spacing:.5px;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center}
+.card-title b{color:var(--text);font-size:13px;font-family:system-ui;font-weight:600;text-transform:none;letter-spacing:0}
+.chart-wrap{position:relative;height:240px}
+
+.table-wrap{overflow-x:auto;max-height:480px;overflow-y:auto;border-radius:10px;border:1px solid var(--border);background:var(--surface)}
+table{width:100%;border-collapse:collapse;font-size:12px}
+th{text-align:left;padding:10px 12px;font-size:10px;font-family:monospace;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;border-bottom:1px solid var(--border);position:sticky;top:0;background:var(--surface);cursor:pointer;user-select:none;white-space:nowrap}
+th:hover{color:var(--accent)}
+th.sort-asc::after{content:' ▲';color:var(--accent)}
+th.sort-desc::after{content:' ▼';color:var(--accent)}
+td{padding:9px 12px;border-bottom:1px solid rgba(255,255,255,.04);vertical-align:top}
+td.num{font-family:monospace;text-align:right;white-space:nowrap}
+td.id{font-family:monospace;color:var(--muted);font-size:11px}
+td.desc{max-width:380px;font-size:11px;color:var(--muted);line-height:1.5}
+tr:hover td{background:var(--surface2)}
+
+.pill{display:inline-block;padding:2px 8px;border-radius:20px;font-size:10px;font-family:monospace;background:rgba(79,142,247,.15);color:var(--accent);white-space:nowrap}
+.no-data{color:var(--muted);font-size:12px;text-align:center;padding:24px;font-family:monospace}
+</style>
+</head>
+<body>
+
+<div id="loading-screen" class="loading">
+  <div class="spinner"></div><br>
+  Caricamento fatture…
+</div>
+
+<div id="dashboard" style="display:none">
+  <div class="header">
+    <div>
+      <h1>Dashboard Fatture Emesse</h1>
+      <p id="hdr-sub">—</p>
+    </div>
+    <div class="badge" id="hdr-badge">—</div>
+  </div>
+
+  <div class="warn-box" id="warn-box"></div>
+
+  <div class="filters">
+    <span class="fl">anno</span><select id="f-anno"></select>
+    <span class="fl">mese</span><select id="f-mese"></select>
+    <span class="fl">cliente</span><select id="f-cliente"></select>
+  </div>
+
+  <div class="kpi-grid" id="kpis"></div>
+
+  <div class="grid2">
+    <div class="card">
+      <div class="card-title">Fatturato per <b>mese</b></div>
+      <div class="chart-wrap"><canvas id="c-mese"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Fatturato per <b>cliente</b> · top 10</div>
+      <div class="chart-wrap"><canvas id="c-cliente"></canvas></div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-bottom:20px">
+    <div class="card-title">
+      <b>Elenco fatture</b>
+      <span id="tbl-count" style="font-family:monospace;color:var(--muted);font-size:11px">—</span>
+    </div>
+    <div class="table-wrap">
+      <table id="tbl">
+        <thead>
+          <tr>
+            <th data-k="INVOICE_ID">ID</th>
+            <th data-k="Date">Data</th>
+            <th data-k="customer">Cliente</th>
+            <th data-k="description">Descrizione</th>
+            <th data-k="net" class="num">Imponibile</th>
+            <th data-k="vat" class="num">IVA</th>
+            <th data-k="gross" class="num">Totale</th>
+          </tr>
+        </thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ═══════════════════════════════════════════════════════════════════════
+   CONFIG — COMPILA QUI L'ID DEL FOGLIO E IL NOME DEL TAB
+   ═══════════════════════════════════════════════════════════════════════ */
+
+// ID del foglio Google Sheet (la stringa tra /d/ e /edit nell'URL).
+// Requisito: foglio condiviso come "Chiunque con il link → Visualizzatore".
+const SHEET_ID = 'INSERISCI_QUI_ID_DEL_FOGLIO';
+
+// Nome esatto del tab (case-sensitive, rispetta spazi/underscore).
+const SHEET_TAB = 'Fatture Emesse';
+
+/* ═══════════════════════════════════════════════════════════════════════
+   FINE CONFIG — da qui in giù non serve toccare nulla
+   ═══════════════════════════════════════════════════════════════════════ */
+
+const URL_FATTURE = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(SHEET_TAB)}`;
+const MESI = ['gen','feb','mar','apr','mag','giu','lug','ago','set','ott','nov','dic'];
+
+let ALL = [];
+let filtered = [];
+let sortKey = 'Date';
+let sortDir = -1;
+const charts = {};
+const warnings = [];
+
+function eur(v){ return '€ ' + Number(v||0).toLocaleString('it-IT', {maximumFractionDigits:0}); }
+function eurFull(v){ return '€ ' + Number(v||0).toLocaleString('it-IT', {minimumFractionDigits:2, maximumFractionDigits:2}); }
+function fmtDate(d){
+  if(!d) return '';
+  return d.getDate().toString().padStart(2,'0') + '/' + (d.getMonth()+1).toString().padStart(2,'0') + '/' + d.getFullYear();
+}
+function num(v){
+  if(v == null || v === '') return 0;
+  const s = String(v).trim().replace(/[€\s]/g,'');
+  if(s.includes(',') && s.includes('.')) return parseFloat(s.replace(/\./g,'').replace(',','.')) || 0;
+  if(s.includes(',')) return parseFloat(s.replace(',','.')) || 0;
+  return parseFloat(s) || 0;
+}
+function parseDate(v){
+  if(!v) return null;
+  if(v instanceof Date) return v;
+  const s = String(v).trim();
+  let m = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
+  if(m) return new Date(+m[1], +m[2]-1, +m[3]);
+  m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+  if(m) return new Date(+m[3], +m[2]-1, +m[1]);
+  m = s.match(/Date\((\d+),(\d+),(\d+)/);
+  if(m) return new Date(+m[1], +m[2], +m[3]);
+  const d = new Date(s);
+  return isNaN(d) ? null : d;
+}
+function addWarning(msg){ warnings.push(msg); }
+function escapeHtml(s){
+  return String(s||'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]);
+}
+
+async function boot(){
+  if(SHEET_ID === 'INSERISCI_QUI_ID_DEL_FOGLIO'){
+    showError('Configurazione mancante: imposta <code>SHEET_ID</code> in cima allo script.');
+    return;
+  }
+  try {
+    const res = await fetch(URL_FATTURE, {cache:'no-cache'});
+    if(!res.ok) throw new Error('HTTP ' + res.status + ' — il foglio è condiviso come "Chiunque con il link → Visualizzatore"?');
+    const csv = await res.text();
+    parseFatture(csv);
+    if(ALL.length === 0){
+      showError('Nessuna fattura trovata nel tab "' + SHEET_TAB + '". Verifica che il nome del tab sia esatto.');
+      return;
+    }
+    document.getElementById('loading-screen').style.display = 'none';
+    document.getElementById('dashboard').style.display = 'block';
+    initFilters();
+    renderWarnings();
+    render();
+  } catch(e){
+    showError('Errore nel caricamento dati: ' + (e.message || e));
+  }
+}
+
+function showError(msg){
+  document.getElementById('loading-screen').innerHTML =
+    '<div class="error-box">❌ ' + msg + '<br><br>' +
+    '<button class="retry-btn" onclick="location.reload()">↺ Riprova</button></div>';
+}
+function renderWarnings(){
+  if(!warnings.length) return;
+  const box = document.getElementById('warn-box');
+  box.innerHTML = warnings.map(w => '⚠ ' + w).join('<br>');
+  box.style.display = 'block';
+}
+
+function parseFatture(csv){
+  const r = Papa.parse(csv, {header:true, skipEmptyLines:true,
+    transformHeader: h => h.trim()});
+  let skipped = 0;
+  r.data.forEach(row => {
+    const id = row.INVOICE_ID || row.invoice_id || row.ID || row.Id;
+    const gross = num(row.gross || row.Gross || row.totale || row.Totale);
+    if(!id || !gross){ skipped++; return; }
+    const date = parseDate(row.Date || row.date || row.Data);
+    ALL.push({
+      INVOICE_ID:  String(id).trim(),
+      Date:        date,
+      Year:        date ? date.getFullYear() : (parseInt(row.Year)||null),
+      month:       date ? date.getMonth()+1 : (parseInt(row.month)||null),
+      customer:    (row.customer || row.Customer || row.Cliente || '').trim(),
+      description: (row.description || row.Description || row.Descrizione || '').trim(),
+      net:         num(row.net || row.Net || row.imponibile),
+      vat:         num(row.vat || row.Vat || row.iva || row.IVA),
+      gross:       gross,
+    });
+  });
+  if(skipped > 0) addWarning(skipped + ' righe del foglio sono state ignorate (mancavano INVOICE_ID o gross).');
+}
+
+function initFilters(){
+  const anni = [...new Set(ALL.map(r => r.Year).filter(Boolean))].sort();
+  const clienti = [...new Set(ALL.map(r => r.customer).filter(Boolean))].sort();
+
+  const fAnno = document.getElementById('f-anno');
+  fAnno.innerHTML = '<option value="all">tutti</option>' + anni.map(a => `<option value="${a}">${a}</option>`).join('');
+
+  const fMese = document.getElementById('f-mese');
+  fMese.innerHTML = '<option value="all">tutti</option>' + MESI.map((m,i) => `<option value="${i+1}">${m}</option>`).join('');
+
+  const fCli = document.getElementById('f-cliente');
+  fCli.innerHTML = '<option value="all">tutti</option>' + clienti.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('');
+
+  [fAnno, fMese, fCli].forEach(el => el.addEventListener('change', render));
+
+  document.querySelectorAll('th[data-k]').forEach(th => {
+    th.addEventListener('click', () => {
+      const k = th.dataset.k;
+      if(sortKey === k) sortDir = -sortDir;
+      else { sortKey = k; sortDir = -1; }
+      renderTable();
+    });
+  });
+}
+
+function applyFilters(){
+  const a = document.getElementById('f-anno').value;
+  const m = document.getElementById('f-mese').value;
+  const c = document.getElementById('f-cliente').value;
+  filtered = ALL.filter(r => {
+    if(a !== 'all' && String(r.Year) !== a) return false;
+    if(m !== 'all' && String(r.month) !== m) return false;
+    if(c !== 'all' && r.customer !== c) return false;
+    return true;
+  });
+}
+
+function render(){
+  applyFilters();
+  renderHeader();
+  renderKPI();
+  renderChartMese();
+  renderChartCliente();
+  renderTable();
+}
+
+function renderHeader(){
+  document.getElementById('hdr-sub').textContent = filtered.length + ' di ' + ALL.length + ' fatture mostrate';
+  document.getElementById('hdr-badge').textContent = eurFull(filtered.reduce((s,r)=>s+r.gross,0));
+}
+
+function renderKPI(){
+  const f = filtered;
+  const tot = f.reduce((s,r)=>s+r.gross,0);
+  const net = f.reduce((s,r)=>s+r.net,0);
+  const med = f.length ? tot/f.length : 0;
+  const clienti = new Set(f.map(r=>r.customer)).size;
+
+  const kpis = [
+    {l:'Fatturato lordo',  v:eur(tot),     s:f.length+' fatture',   c:'var(--accent)'},
+    {l:'Imponibile',       v:eur(net),     s:'IVA: '+eur(tot-net),  c:'var(--accent2)'},
+    {l:'Fattura media',    v:eur(med),     s:'lordo per fattura',   c:'var(--accent3)'},
+    {l:'Clienti',          v:String(clienti), s:'distinti nel periodo', c:'var(--accent4)'},
+  ];
+  document.getElementById('kpis').innerHTML = kpis.map(k =>
+    `<div class="kpi" style="--kc:${k.c}">
+      <div class="kpi-label">${k.l}</div>
+      <div class="kpi-value">${k.v}</div>
+      <div class="kpi-sub">${k.s}</div>
+    </div>`
+  ).join('');
+}
+
+function renderChartMese(){
+  if(charts.mese) charts.mese.destroy();
+  const wrap = document.getElementById('c-mese').parentElement;
+
+  const byYM = {};
+  filtered.forEach(r => {
+    if(!r.Year || !r.month) return;
+    const k = r.Year + '-' + String(r.month).padStart(2,'0');
+    byYM[k] = (byYM[k] || 0) + r.gross;
+  });
+  const keys = Object.keys(byYM).sort();
+  if(!keys.length){
+    wrap.innerHTML = '<div class="no-data">nessun dato nel periodo selezionato</div>';
+    return;
+  }
+  if(!wrap.querySelector('canvas')){
+    wrap.innerHTML = '<canvas id="c-mese"></canvas>';
+  }
+
+  charts.mese = new Chart(document.getElementById('c-mese').getContext('2d'), {
+    type:'bar',
+    data:{
+      labels: keys.map(k => { const [y,m] = k.split('-'); return MESI[+m-1] + " '" + y.slice(2); }),
+      datasets:[{
+        data: keys.map(k => byYM[k]),
+        backgroundColor: 'rgba(79,142,247,0.6)',
+        borderColor: 'rgba(79,142,247,1)',
+        borderWidth: 1,
+        borderRadius: 4,
+      }]
+    },
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{legend:{display:false}, tooltip:{callbacks:{label:c => eurFull(c.parsed.y)}}},
+      scales:{
+        x:{ticks:{color:'#6b7280',font:{family:'monospace',size:10}}, grid:{display:false}},
+        y:{ticks:{color:'#6b7280',font:{family:'monospace',size:10},callback:v => eur(v)}, grid:{color:'rgba(255,255,255,0.04)'}}
+      }
+    }
+  });
+}
+
+function renderChartCliente(){
+  if(charts.cli) charts.cli.destroy();
+  const wrap = document.getElementById('c-cliente').parentElement;
+
+  const byCli = {};
+  filtered.forEach(r => { byCli[r.customer] = (byCli[r.customer]||0) + r.gross; });
+  const sorted = Object.entries(byCli).sort((a,b)=>b[1]-a[1]).slice(0,10);
+
+  if(!sorted.length){
+    wrap.innerHTML = '<div class="no-data">nessun dato nel periodo selezionato</div>';
+    return;
+  }
+  if(!wrap.querySelector('canvas')){
+    wrap.innerHTML = '<canvas id="c-cliente"></canvas>';
+  }
+
+  charts.cli = new Chart(document.getElementById('c-cliente').getContext('2d'), {
+    type:'bar',
+    data:{
+      labels: sorted.map(([c,_]) => c.length > 30 ? c.slice(0,28)+'…' : c),
+      datasets:[{
+        data: sorted.map(([_,v]) => v),
+        backgroundColor: 'rgba(52,211,153,0.6)',
+        borderColor: 'rgba(52,211,153,1)',
+        borderWidth: 1,
+        borderRadius: 4,
+      }]
+    },
+    options:{
+      indexAxis:'y',
+      responsive:true, maintainAspectRatio:false,
+      plugins:{legend:{display:false}, tooltip:{callbacks:{
+        title: items => sorted[items[0].dataIndex][0],
+        label: c => eurFull(c.parsed.x)
+      }}},
+      scales:{
+        x:{ticks:{color:'#6b7280',font:{family:'monospace',size:10},callback:v => eur(v)}, grid:{color:'rgba(255,255,255,0.04)'}},
+        y:{ticks:{color:'#6b7280',font:{family:'monospace',size:10}}, grid:{display:false}}
+      }
+    }
+  });
+}
+
+function renderTable(){
+  const tb = document.getElementById('tbody');
+  const sorted = [...filtered].sort((a,b) => {
+    let va = a[sortKey], vb = b[sortKey];
+    if(va instanceof Date) va = va.getTime();
+    if(vb instanceof Date) vb = vb.getTime();
+    if(typeof va === 'string') va = va.toLowerCase();
+    if(typeof vb === 'string') vb = vb.toLowerCase();
+    if(va == null) return 1;
+    if(vb == null) return -1;
+    return va < vb ? -sortDir : va > vb ? sortDir : 0;
+  });
+
+  document.querySelectorAll('th').forEach(th => th.classList.remove('sort-asc','sort-desc'));
+  const activeTh = document.querySelector(`th[data-k="${sortKey}"]`);
+  if(activeTh) activeTh.classList.add(sortDir === 1 ? 'sort-asc' : 'sort-desc');
+
+  if(!sorted.length){
+    tb.innerHTML = '<tr><td colspan="7" class="no-data">nessuna fattura nel periodo selezionato</td></tr>';
+  } else {
+    tb.innerHTML = sorted.map(r => `
+      <tr>
+        <td class="id">${r.INVOICE_ID}</td>
+        <td>${fmtDate(r.Date)}</td>
+        <td><span class="pill">${escapeHtml(r.customer)}</span></td>
+        <td class="desc">${escapeHtml(r.description)}</td>
+        <td class="num">${eurFull(r.net)}</td>
+        <td class="num">${eurFull(r.vat)}</td>
+        <td class="num"><b>${eurFull(r.gross)}</b></td>
+      </tr>
+    `).join('');
+  }
+  document.getElementById('tbl-count').textContent = sorted.length + ' righe';
+}
+
+boot();
+</script>
+</body>
+</html>
