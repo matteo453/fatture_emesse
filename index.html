@@ -32,6 +32,7 @@ select:focus,select:hover{border-color:var(--accent)}
 .kpi::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--kc)}
 .kpi-label{font-size:10px;color:var(--muted);font-family:monospace;text-transform:uppercase;letter-spacing:.5px;margin-bottom:7px}
 .kpi-value{font-size:22px;font-weight:600;font-family:monospace;color:var(--kc);line-height:1.1}
+.kpi-value.small{font-size:14px;font-weight:600;line-height:1.3;word-break:break-word}
 .kpi-sub{font-size:11px;color:var(--muted);margin-top:5px;font-family:monospace}
  
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
@@ -355,18 +356,68 @@ function renderKPI(){
  
   const clienti = new Set(f.map(r=>r.customer)).size;
  
+  // Cliente principale: top per fatturato + % concentrazione
+  const byCli = {};
+  f.forEach(r => { byCli[r.customer] = (byCli[r.customer]||0) + r.gross; });
+  const topCli = Object.entries(byCli).sort((a,b)=>b[1]-a[1])[0];
+  const topNome = topCli ? topCli[0] : '—';
+  const topNomeShort = topNome.length > 18 ? topNome.slice(0,16)+'…' : topNome;
+  const topPct = topCli && tot > 0 ? (topCli[1]/tot*100) : 0;
+ 
+  // Mensile medio: fatturato / numero di mesi distinti nel periodo
+  const mesiSet = new Set(f.filter(r=>r.Year && r.month).map(r => r.Year+'-'+r.month));
+  const nMesi = mesiSet.size;
+  const mensileMedio = nMesi > 0 ? tot / nMesi : 0;
+ 
+  // Variazione YoY: confronta i dati filtrati con lo stesso periodo dell'anno precedente.
+  // Si replica l'aggregazione su ALL applicando: stessi mesi del filtro ma anno = (anno_filtro - 1).
+  // Se il filtro anno è "tutti" o non si possono confrontare i periodi, mostra "—".
+  let yoy = null;
+  let yoyLabel = '';
+  const aFilter = document.getElementById('f-anno').value;
+  if(aFilter !== 'all' && tot > 0){
+    const annoCorr = parseInt(aFilter);
+    const annoPrev = annoCorr - 1;
+    const m = document.getElementById('f-mese').value;
+    const c = document.getElementById('f-cliente').value;
+    const s = document.getElementById('f-stato').value;
+    const totPrev = ALL.filter(r => {
+      if(r.Year !== annoPrev) return false;
+      if(m !== 'all' && String(r.month) !== m) return false;
+      if(c !== 'all' && r.customer !== c) return false;
+      if(s !== 'all'){
+        if(s === 'overdue' && !r.Scaduto) return false;
+        else if(s !== 'overdue' && r.Stato !== s) return false;
+      }
+      return true;
+    }).reduce((s,r)=>s+r.gross,0);
+    if(totPrev > 0){
+      yoy = ((tot - totPrev) / totPrev) * 100;
+      yoyLabel = `vs ${annoPrev}: ${eur(totPrev)}`;
+    } else {
+      yoyLabel = `nessun dato ${annoPrev}`;
+    }
+  } else {
+    yoyLabel = 'filtra per anno';
+  }
+  const yoyValue = yoy !== null ? (yoy >= 0 ? '+' : '') + yoy.toFixed(0) + '%' : '—';
+  const yoyColor = yoy === null ? 'var(--muted)' : (yoy >= 0 ? 'var(--accent2)' : 'var(--accent4)');
+ 
   const kpis = [
     {l:'Fatturato lordo',  v:eur(tot),       s:f.length+' fatture',                                        c:'var(--accent)'},
     {l:'Incassato',        v:eur(incassato), s:pctIncassato.toFixed(0)+'% del fatturato',                  c:'var(--accent2)'},
     {l:'Esposizione',      v:eur(aperto),    s:'da incassare',                                              c:'var(--accent3)'},
     {l:'Scaduto',          v:eur(scaduto),   s:nScaduto > 0 ? nScaduto+' fatture · media '+(ggScaduto!=null?Math.round(ggScaduto):'—')+' gg' : 'nessun ritardo', c:'var(--accent4)'},
     {l:'DSO medio',        v:dso!=null ? Math.round(dso)+' gg' : '—', s:'tempo medio di incasso',          c:'var(--accent5)'},
+    {l:'Mensile medio',    v:eur(mensileMedio), s:nMesi+' mesi nel periodo',                                c:'var(--accent)'},
+    {l:'Cliente principale', v:topNomeShort, s:topPct.toFixed(0)+'% del fatturato',                         c:'var(--accent3)', valueClass:'small', titleAttr:topNome},
+    {l:'Variazione YoY',   v:yoyValue,        s:yoyLabel,                                                   c:yoyColor},
     {l:'Clienti',          v:String(clienti), s:'distinti nel periodo',                                    c:'var(--muted)'},
   ];
   document.getElementById('kpis').innerHTML = kpis.map(k =>
-    `<div class="kpi" style="--kc:${k.c}">
+    `<div class="kpi" style="--kc:${k.c}"${k.titleAttr?' title="'+escapeHtml(k.titleAttr)+'"':''}>
       <div class="kpi-label">${k.l}</div>
-      <div class="kpi-value">${k.v}</div>
+      <div class="kpi-value${k.valueClass?' '+k.valueClass:''}">${escapeHtml(k.v)}</div>
       <div class="kpi-sub">${k.s}</div>
     </div>`
   ).join('');
