@@ -8,62 +8,72 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-:root{--bg:#0f1117;--surface:#181c27;--surface2:#1e2334;--border:#2a3045;--accent:#4f8ef7;--accent2:#34d399;--accent3:#f59e0b;--accent4:#f87171;--text:#e8eaf0;--muted:#6b7280}
+:root{--bg:#0f1117;--surface:#181c27;--surface2:#1e2334;--border:#2a3045;--accent:#4f8ef7;--accent2:#34d399;--accent3:#f59e0b;--accent4:#f87171;--accent5:#a78bfa;--text:#e8eaf0;--muted:#6b7280}
 body{background:var(--bg);color:var(--text);font-family:system-ui,sans-serif;padding:24px;min-height:100vh}
 .header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:22px;flex-wrap:wrap;gap:12px}
 .header h1{font-size:21px;font-weight:600;letter-spacing:-.5px}
 .header p{color:var(--muted);font-size:12px;margin-top:3px;font-family:monospace}
 .badge{background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:5px 12px;font-size:11px;font-family:monospace;color:var(--accent2)}
-
+ 
 .loading{text-align:center;padding:80px 20px;color:var(--muted);font-family:monospace;font-size:14px;line-height:2.4}
 .spinner{display:inline-block;width:22px;height:22px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite;margin-bottom:14px}
 @keyframes spin{to{transform:rotate(360deg)}}
 .error-box{background:#2a1a1a;border:1px solid var(--accent4);border-radius:10px;padding:20px;color:var(--accent4);font-size:13px;margin:20px 0;font-family:monospace;line-height:2}
 .warn-box{background:#2a2318;border:1px solid var(--accent3);border-radius:10px;padding:14px 18px;color:var(--accent3);font-size:12px;margin-bottom:16px;font-family:monospace;line-height:1.7;display:none}
 .retry-btn{background:var(--accent);color:#fff;border:none;padding:9px 20px;border-radius:7px;font-size:13px;cursor:pointer;margin-top:12px}
-
+ 
 .filters{display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap;align-items:center}
 .fl{font-size:11px;color:var(--muted);font-family:monospace}
 select{background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:8px 14px;border-radius:8px;font-size:13px;outline:none;cursor:pointer}
 select:focus,select:hover{border-color:var(--accent)}
-
-.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-bottom:18px}
+ 
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin-bottom:18px}
 .kpi{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:18px;position:relative;overflow:hidden}
 .kpi::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--kc)}
 .kpi-label{font-size:10px;color:var(--muted);font-family:monospace;text-transform:uppercase;letter-spacing:.5px;margin-bottom:7px}
-.kpi-value{font-size:24px;font-weight:600;font-family:monospace;color:var(--kc);line-height:1.1}
+.kpi-value{font-size:22px;font-weight:600;font-family:monospace;color:var(--kc);line-height:1.1}
 .kpi-sub{font-size:11px;color:var(--muted);margin-top:5px;font-family:monospace}
-
+ 
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
 @media(max-width:900px){.grid2{grid-template-columns:1fr}}
-.card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:20px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:20px;margin-bottom:14px}
 .card-title{font-size:10px;color:var(--muted);font-family:monospace;text-transform:uppercase;letter-spacing:.5px;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center}
 .card-title b{color:var(--text);font-size:13px;font-family:system-ui;font-weight:600;text-transform:none;letter-spacing:0}
-.chart-wrap{position:relative;height:240px}
-
-.table-wrap{overflow-x:auto;max-height:480px;overflow-y:auto;border-radius:10px;border:1px solid var(--border);background:var(--surface)}
+.chart-wrap{position:relative;height:260px}
+ 
+.table-wrap{overflow-x:auto;max-height:520px;overflow-y:auto;border-radius:10px;border:1px solid var(--border);background:var(--surface)}
 table{width:100%;border-collapse:collapse;font-size:12px}
-th{text-align:left;padding:10px 12px;font-size:10px;font-family:monospace;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;border-bottom:1px solid var(--border);position:sticky;top:0;background:var(--surface);cursor:pointer;user-select:none;white-space:nowrap}
+th{text-align:left;padding:10px 12px;font-size:10px;font-family:monospace;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;border-bottom:1px solid var(--border);position:sticky;top:0;background:var(--surface);cursor:pointer;user-select:none;white-space:nowrap;z-index:1}
 th:hover{color:var(--accent)}
 th.sort-asc::after{content:' ▲';color:var(--accent)}
 th.sort-desc::after{content:' ▼';color:var(--accent)}
 td{padding:9px 12px;border-bottom:1px solid rgba(255,255,255,.04);vertical-align:top}
 td.num{font-family:monospace;text-align:right;white-space:nowrap}
 td.id{font-family:monospace;color:var(--muted);font-size:11px}
-td.desc{max-width:380px;font-size:11px;color:var(--muted);line-height:1.5}
+td.desc{max-width:340px;font-size:11px;color:var(--muted);line-height:1.5}
+td.gg{font-family:monospace;text-align:right;white-space:nowrap;font-size:11px}
+td.gg.late{color:var(--accent4)}
+td.gg.paid{color:var(--accent2)}
 tr:hover td{background:var(--surface2)}
-
+ 
 .pill{display:inline-block;padding:2px 8px;border-radius:20px;font-size:10px;font-family:monospace;background:rgba(79,142,247,.15);color:var(--accent);white-space:nowrap}
+.status{display:inline-block;padding:3px 9px;border-radius:4px;font-size:10px;font-family:monospace;font-weight:600;text-transform:uppercase;letter-spacing:.4px;white-space:nowrap}
+.status-paid{background:rgba(52,211,153,.15);color:var(--accent2)}
+.status-open{background:rgba(79,142,247,.15);color:var(--accent)}
+.status-partial{background:rgba(245,158,11,.15);color:var(--accent3)}
+.status-overdue{background:rgba(248,113,113,.18);color:var(--accent4)}
+.status-noplan{background:rgba(107,114,128,.2);color:var(--muted)}
+ 
 .no-data{color:var(--muted);font-size:12px;text-align:center;padding:24px;font-family:monospace}
 </style>
 </head>
 <body>
-
+ 
 <div id="loading-screen" class="loading">
   <div class="spinner"></div><br>
   Caricamento fatture…
 </div>
-
+ 
 <div id="dashboard" style="display:none">
   <div class="header">
     <div>
@@ -72,29 +82,41 @@ tr:hover td{background:var(--surface2)}
     </div>
     <div class="badge" id="hdr-badge">—</div>
   </div>
-
+ 
   <div class="warn-box" id="warn-box"></div>
-
+ 
   <div class="filters">
     <span class="fl">anno</span><select id="f-anno"></select>
     <span class="fl">mese</span><select id="f-mese"></select>
     <span class="fl">cliente</span><select id="f-cliente"></select>
+    <span class="fl">stato</span><select id="f-stato">
+      <option value="all">tutti</option>
+      <option value="paid">incassate</option>
+      <option value="open">aperte</option>
+      <option value="overdue">scadute</option>
+      <option value="partial">parziali</option>
+    </select>
   </div>
-
+ 
   <div class="kpi-grid" id="kpis"></div>
-
+ 
+  <div class="card">
+    <div class="card-title">Fatturato vs <b>incassato per mese</b></div>
+    <div class="chart-wrap" style="height:280px"><canvas id="c-trend"></canvas></div>
+  </div>
+ 
   <div class="grid2">
     <div class="card">
-      <div class="card-title">Fatturato per <b>mese</b></div>
-      <div class="chart-wrap"><canvas id="c-mese"></canvas></div>
-    </div>
-    <div class="card">
-      <div class="card-title">Fatturato per <b>cliente</b> · top 10</div>
+      <div class="card-title">Top 10 <b>clienti per fatturato</b></div>
       <div class="chart-wrap"><canvas id="c-cliente"></canvas></div>
     </div>
+    <div class="card">
+      <div class="card-title">Aging <b>esposizione aperta</b></div>
+      <div class="chart-wrap"><canvas id="c-aging"></canvas></div>
+    </div>
   </div>
-
-  <div class="card" style="margin-bottom:20px">
+ 
+  <div class="card">
     <div class="card-title">
       <b>Elenco fatture</b>
       <span id="tbl-count" style="font-family:monospace;color:var(--muted);font-size:11px">—</span>
@@ -107,9 +129,10 @@ tr:hover td{background:var(--surface2)}
             <th data-k="Date">Data</th>
             <th data-k="customer">Cliente</th>
             <th data-k="description">Descrizione</th>
-            <th data-k="net" class="num">Imponibile</th>
-            <th data-k="vat" class="num">IVA</th>
             <th data-k="gross" class="num">Totale</th>
+            <th data-k="Stato">Stato</th>
+            <th data-k="_giorni">Giorni</th>
+            <th data-k="Importo_Aperto" class="num">Aperto</th>
           </tr>
         </thead>
         <tbody id="tbody"></tbody>
@@ -117,33 +140,33 @@ tr:hover td{background:var(--surface2)}
     </div>
   </div>
 </div>
-
+ 
 <script>
 /* ═══════════════════════════════════════════════════════════════════════
    CONFIG — COMPILA QUI L'ID DEL FOGLIO E IL NOME DEL TAB
    ═══════════════════════════════════════════════════════════════════════ */
-
+ 
 // ID del foglio Google Sheet (la stringa tra /d/ e /edit nell'URL).
 // Requisito: foglio condiviso come "Chiunque con il link → Visualizzatore".
-const SHEET_ID = '1Hnh9GkMXigTwCKs92ts3H8N1TvZUN1s4_WT7HKXhfRg';
-
-// Nome esatto del tab (case-sensitive, rispetta spazi/underscore).
+const SHEET_ID = 'INSERISCI_QUI_ID_DEL_FOGLIO';
+ 
+// Nome esatto del tab.
 const SHEET_TAB = 'Fatture Emesse';
-
+ 
 /* ═══════════════════════════════════════════════════════════════════════
-   FINE CONFIG — da qui in giù non serve toccare nulla
+   FINE CONFIG
    ═══════════════════════════════════════════════════════════════════════ */
-
+ 
 const URL_FATTURE = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(SHEET_TAB)}`;
 const MESI = ['gen','feb','mar','apr','mag','giu','lug','ago','set','ott','nov','dic'];
-
+ 
 let ALL = [];
 let filtered = [];
 let sortKey = 'Date';
 let sortDir = -1;
 const charts = {};
 const warnings = [];
-
+ 
 function eur(v){ return '€ ' + Number(v||0).toLocaleString('it-IT', {maximumFractionDigits:0}); }
 function eurFull(v){ return '€ ' + Number(v||0).toLocaleString('it-IT', {minimumFractionDigits:2, maximumFractionDigits:2}); }
 function fmtDate(d){
@@ -156,6 +179,16 @@ function num(v){
   if(s.includes(',') && s.includes('.')) return parseFloat(s.replace(/\./g,'').replace(',','.')) || 0;
   if(s.includes(',')) return parseFloat(s.replace(',','.')) || 0;
   return parseFloat(s) || 0;
+}
+function intOrNull(v){
+  if(v == null || v === '') return null;
+  const n = parseInt(String(v).trim(), 10);
+  return isNaN(n) ? null : n;
+}
+function bool(v){
+  if(v === true || v === false) return v;
+  const s = String(v||'').trim().toLowerCase();
+  return s === 'true' || s === 'vero' || s === '1' || s === 'sì' || s === 'si';
 }
 function parseDate(v){
   if(!v) return null;
@@ -174,7 +207,7 @@ function addWarning(msg){ warnings.push(msg); }
 function escapeHtml(s){
   return String(s||'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]);
 }
-
+ 
 async function boot(){
   if(SHEET_ID === 'INSERISCI_QUI_ID_DEL_FOGLIO'){
     showError('Configurazione mancante: imposta <code>SHEET_ID</code> in cima allo script.');
@@ -198,7 +231,7 @@ async function boot(){
     showError('Errore nel caricamento dati: ' + (e.message || e));
   }
 }
-
+ 
 function showError(msg){
   document.getElementById('loading-screen').innerHTML =
     '<div class="error-box">❌ ' + msg + '<br><br>' +
@@ -210,46 +243,57 @@ function renderWarnings(){
   box.innerHTML = warnings.map(w => '⚠ ' + w).join('<br>');
   box.style.display = 'block';
 }
-
+ 
 function parseFatture(csv){
   const r = Papa.parse(csv, {header:true, skipEmptyLines:true,
     transformHeader: h => h.trim()});
   let skipped = 0;
   r.data.forEach(row => {
-    const id = row.INVOICE_ID || row.invoice_id || row.ID || row.Id;
-    const gross = num(row.gross || row.Gross || row.totale || row.Totale);
+    const id = row.INVOICE_ID || row.invoice_id || row.ID;
+    const gross = num(row.gross || row.Gross);
     if(!id || !gross){ skipped++; return; }
     const date = parseDate(row.Date || row.date || row.Data);
+    const dataIncasso = parseDate(row.Data_Incasso);
     ALL.push({
-      INVOICE_ID:  String(id).trim(),
-      Date:        date,
-      Year:        date ? date.getFullYear() : (parseInt(row.Year)||null),
-      month:       date ? date.getMonth()+1 : (parseInt(row.month)||null),
-      customer:    (row.customer || row.Customer || row.Cliente || '').trim(),
-      description: (row.description || row.Description || row.Descrizione || '').trim(),
-      net:         num(row.net || row.Net || row.imponibile),
-      vat:         num(row.vat || row.Vat || row.iva || row.IVA),
-      gross:       gross,
+      INVOICE_ID:        String(id).trim(),
+      Date:              date,
+      Year:              date ? date.getFullYear() : (parseInt(row.Year)||null),
+      month:             date ? date.getMonth()+1 : (parseInt(row.month)||null),
+      customer:          (row.customer || '').trim(),
+      description:       (row.description || '').trim(),
+      net:               num(row.net),
+      vat:               num(row.vat),
+      gross:             gross,
+      Stato:             (row.Stato || 'unknown').trim().toLowerCase(),
+      Data_Incasso:      dataIncasso,
+      Importo_Incassato: num(row.Importo_Incassato),
+      Importo_Aperto:    num(row.Importo_Aperto),
+      Giorni_Incasso:    intOrNull(row.Giorni_Incasso),
+      Scaduto:           bool(row.Scaduto),
+      Giorni_Scaduto:    intOrNull(row.Giorni_Scaduto),
+      Numero_Fattura:    (row.Numero_Fattura || '').trim(),
     });
   });
   if(skipped > 0) addWarning(skipped + ' righe del foglio sono state ignorate (mancavano INVOICE_ID o gross).');
 }
-
+ 
 function initFilters(){
   const anni = [...new Set(ALL.map(r => r.Year).filter(Boolean))].sort();
   const clienti = [...new Set(ALL.map(r => r.customer).filter(Boolean))].sort();
-
+ 
   const fAnno = document.getElementById('f-anno');
   fAnno.innerHTML = '<option value="all">tutti</option>' + anni.map(a => `<option value="${a}">${a}</option>`).join('');
-
+ 
   const fMese = document.getElementById('f-mese');
   fMese.innerHTML = '<option value="all">tutti</option>' + MESI.map((m,i) => `<option value="${i+1}">${m}</option>`).join('');
-
+ 
   const fCli = document.getElementById('f-cliente');
   fCli.innerHTML = '<option value="all">tutti</option>' + clienti.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('');
-
-  [fAnno, fMese, fCli].forEach(el => el.addEventListener('change', render));
-
+ 
+  ['f-anno','f-mese','f-cliente','f-stato'].forEach(id => {
+    document.getElementById(id).addEventListener('change', render);
+  });
+ 
   document.querySelectorAll('th[data-k]').forEach(th => {
     th.addEventListener('click', () => {
       const k = th.dataset.k;
@@ -259,45 +303,65 @@ function initFilters(){
     });
   });
 }
-
+ 
 function applyFilters(){
   const a = document.getElementById('f-anno').value;
   const m = document.getElementById('f-mese').value;
   const c = document.getElementById('f-cliente').value;
+  const s = document.getElementById('f-stato').value;
   filtered = ALL.filter(r => {
     if(a !== 'all' && String(r.Year) !== a) return false;
     if(m !== 'all' && String(r.month) !== m) return false;
     if(c !== 'all' && r.customer !== c) return false;
+    if(s !== 'all'){
+      if(s === 'overdue' && !r.Scaduto) return false;
+      else if(s !== 'overdue' && r.Stato !== s) return false;
+    }
     return true;
   });
 }
-
+ 
 function render(){
   applyFilters();
   renderHeader();
   renderKPI();
-  renderChartMese();
+  renderChartTrend();
   renderChartCliente();
+  renderChartAging();
   renderTable();
 }
-
+ 
 function renderHeader(){
-  document.getElementById('hdr-sub').textContent = filtered.length + ' di ' + ALL.length + ' fatture mostrate';
+  document.getElementById('hdr-sub').textContent = filtered.length + ' di ' + ALL.length + ' fatture';
   document.getElementById('hdr-badge').textContent = eurFull(filtered.reduce((s,r)=>s+r.gross,0));
 }
-
+ 
 function renderKPI(){
   const f = filtered;
   const tot = f.reduce((s,r)=>s+r.gross,0);
-  const net = f.reduce((s,r)=>s+r.net,0);
-  const med = f.length ? tot/f.length : 0;
+  const incassato = f.reduce((s,r)=>s+r.Importo_Incassato,0);
+  const aperto = f.reduce((s,r)=>s+r.Importo_Aperto,0);
+  const scaduto = f.filter(r=>r.Scaduto).reduce((s,r)=>s+r.Importo_Aperto,0);
+  const nScaduto = f.filter(r=>r.Scaduto).length;
+  const pctIncassato = tot > 0 ? (incassato/tot*100) : 0;
+ 
+  // DSO medio: media giorni incasso fatture pagate
+  const giorniArr = f.filter(r => r.Stato === 'paid' && r.Giorni_Incasso != null).map(r => r.Giorni_Incasso);
+  const dso = giorniArr.length ? giorniArr.reduce((s,v)=>s+v,0) / giorniArr.length : null;
+ 
+  // Giorni scaduto medio (sulle scadute)
+  const ggScArr = f.filter(r => r.Scaduto && r.Giorni_Scaduto != null).map(r => r.Giorni_Scaduto);
+  const ggScaduto = ggScArr.length ? ggScArr.reduce((s,v)=>s+v,0) / ggScArr.length : null;
+ 
   const clienti = new Set(f.map(r=>r.customer)).size;
-
+ 
   const kpis = [
-    {l:'Fatturato lordo',  v:eur(tot),     s:f.length+' fatture',   c:'var(--accent)'},
-    {l:'Imponibile',       v:eur(net),     s:'IVA: '+eur(tot-net),  c:'var(--accent2)'},
-    {l:'Fattura media',    v:eur(med),     s:'lordo per fattura',   c:'var(--accent3)'},
-    {l:'Clienti',          v:String(clienti), s:'distinti nel periodo', c:'var(--accent4)'},
+    {l:'Fatturato lordo',  v:eur(tot),       s:f.length+' fatture',                                        c:'var(--accent)'},
+    {l:'Incassato',        v:eur(incassato), s:pctIncassato.toFixed(0)+'% del fatturato',                  c:'var(--accent2)'},
+    {l:'Esposizione',      v:eur(aperto),    s:'da incassare',                                              c:'var(--accent3)'},
+    {l:'Scaduto',          v:eur(scaduto),   s:nScaduto > 0 ? nScaduto+' fatture · media '+(ggScaduto!=null?Math.round(ggScaduto):'—')+' gg' : 'nessun ritardo', c:'var(--accent4)'},
+    {l:'DSO medio',        v:dso!=null ? Math.round(dso)+' gg' : '—', s:'tempo medio di incasso',          c:'var(--accent5)'},
+    {l:'Clienti',          v:String(clienti), s:'distinti nel periodo',                                    c:'var(--muted)'},
   ];
   document.getElementById('kpis').innerHTML = kpis.map(k =>
     `<div class="kpi" style="--kc:${k.c}">
@@ -307,41 +371,63 @@ function renderKPI(){
     </div>`
   ).join('');
 }
-
-function renderChartMese(){
-  if(charts.mese) charts.mese.destroy();
-  const wrap = document.getElementById('c-mese').parentElement;
-
-  const byYM = {};
+ 
+function renderChartTrend(){
+  if(charts.trend) charts.trend.destroy();
+  const wrap = document.getElementById('c-trend').parentElement;
+ 
+  // Fatturato per mese (basato su Date)
+  const byEmesso = {};
   filtered.forEach(r => {
     if(!r.Year || !r.month) return;
     const k = r.Year + '-' + String(r.month).padStart(2,'0');
-    byYM[k] = (byYM[k] || 0) + r.gross;
+    byEmesso[k] = (byEmesso[k] || 0) + r.gross;
   });
-  const keys = Object.keys(byYM).sort();
-  if(!keys.length){
+ 
+  // Incassato per mese (basato su Data_Incasso)
+  const byIncassato = {};
+  filtered.forEach(r => {
+    if(!r.Data_Incasso || !r.Importo_Incassato) return;
+    const k = r.Data_Incasso.getFullYear() + '-' + String(r.Data_Incasso.getMonth()+1).padStart(2,'0');
+    byIncassato[k] = (byIncassato[k] || 0) + r.Importo_Incassato;
+  });
+ 
+  const allKeys = [...new Set([...Object.keys(byEmesso), ...Object.keys(byIncassato)])].sort();
+  if(!allKeys.length){
     wrap.innerHTML = '<div class="no-data">nessun dato nel periodo selezionato</div>';
     return;
   }
-  if(!wrap.querySelector('canvas')){
-    wrap.innerHTML = '<canvas id="c-mese"></canvas>';
-  }
-
-  charts.mese = new Chart(document.getElementById('c-mese').getContext('2d'), {
+  if(!wrap.querySelector('canvas')) wrap.innerHTML = '<canvas id="c-trend"></canvas>';
+ 
+  charts.trend = new Chart(document.getElementById('c-trend').getContext('2d'), {
     type:'bar',
     data:{
-      labels: keys.map(k => { const [y,m] = k.split('-'); return MESI[+m-1] + " '" + y.slice(2); }),
-      datasets:[{
-        data: keys.map(k => byYM[k]),
-        backgroundColor: 'rgba(79,142,247,0.6)',
-        borderColor: 'rgba(79,142,247,1)',
-        borderWidth: 1,
-        borderRadius: 4,
-      }]
+      labels: allKeys.map(k => { const [y,m] = k.split('-'); return MESI[+m-1] + " '" + y.slice(2); }),
+      datasets:[
+        {
+          label: 'Fatturato emesso',
+          data: allKeys.map(k => byEmesso[k] || 0),
+          backgroundColor: 'rgba(79,142,247,0.55)',
+          borderColor: 'rgba(79,142,247,1)',
+          borderWidth: 1,
+          borderRadius: 4,
+        },
+        {
+          label: 'Incassato',
+          data: allKeys.map(k => byIncassato[k] || 0),
+          backgroundColor: 'rgba(52,211,153,0.55)',
+          borderColor: 'rgba(52,211,153,1)',
+          borderWidth: 1,
+          borderRadius: 4,
+        }
+      ]
     },
     options:{
       responsive:true, maintainAspectRatio:false,
-      plugins:{legend:{display:false}, tooltip:{callbacks:{label:c => eurFull(c.parsed.y)}}},
+      plugins:{
+        legend:{position:'top', labels:{color:'#e8eaf0', font:{family:'monospace', size:11}, boxWidth:12}},
+        tooltip:{callbacks:{label:c => c.dataset.label + ': ' + eurFull(c.parsed.y)}}
+      },
       scales:{
         x:{ticks:{color:'#6b7280',font:{family:'monospace',size:10}}, grid:{display:false}},
         y:{ticks:{color:'#6b7280',font:{family:'monospace',size:10},callback:v => eur(v)}, grid:{color:'rgba(255,255,255,0.04)'}}
@@ -349,31 +435,29 @@ function renderChartMese(){
     }
   });
 }
-
+ 
 function renderChartCliente(){
   if(charts.cli) charts.cli.destroy();
   const wrap = document.getElementById('c-cliente').parentElement;
-
+ 
   const byCli = {};
   filtered.forEach(r => { byCli[r.customer] = (byCli[r.customer]||0) + r.gross; });
   const sorted = Object.entries(byCli).sort((a,b)=>b[1]-a[1]).slice(0,10);
-
+ 
   if(!sorted.length){
     wrap.innerHTML = '<div class="no-data">nessun dato nel periodo selezionato</div>';
     return;
   }
-  if(!wrap.querySelector('canvas')){
-    wrap.innerHTML = '<canvas id="c-cliente"></canvas>';
-  }
-
+  if(!wrap.querySelector('canvas')) wrap.innerHTML = '<canvas id="c-cliente"></canvas>';
+ 
   charts.cli = new Chart(document.getElementById('c-cliente').getContext('2d'), {
     type:'bar',
     data:{
-      labels: sorted.map(([c,_]) => c.length > 30 ? c.slice(0,28)+'…' : c),
+      labels: sorted.map(([c,_]) => c.length > 28 ? c.slice(0,26)+'…' : c),
       datasets:[{
         data: sorted.map(([_,v]) => v),
-        backgroundColor: 'rgba(52,211,153,0.6)',
-        borderColor: 'rgba(52,211,153,1)',
+        backgroundColor: 'rgba(79,142,247,0.6)',
+        borderColor: 'rgba(79,142,247,1)',
         borderWidth: 1,
         borderRadius: 4,
       }]
@@ -392,11 +476,100 @@ function renderChartCliente(){
     }
   });
 }
-
+ 
+function renderChartAging(){
+  if(charts.aging) charts.aging.destroy();
+  const wrap = document.getElementById('c-aging').parentElement;
+ 
+  // Bucket aging sull'esposizione aperta
+  const buckets = {
+    'a scadere':  0,
+    '0–30 gg':    0,
+    '30–60 gg':   0,
+    '60–90 gg':   0,
+    '> 90 gg':    0,
+  };
+  filtered.forEach(r => {
+    if(!r.Importo_Aperto) return;
+    if(!r.Scaduto){ buckets['a scadere'] += r.Importo_Aperto; return; }
+    const g = r.Giorni_Scaduto || 0;
+    if(g <= 30)      buckets['0–30 gg']  += r.Importo_Aperto;
+    else if(g <= 60) buckets['30–60 gg'] += r.Importo_Aperto;
+    else if(g <= 90) buckets['60–90 gg'] += r.Importo_Aperto;
+    else             buckets['> 90 gg']  += r.Importo_Aperto;
+  });
+ 
+  const totale = Object.values(buckets).reduce((s,v)=>s+v,0);
+  if(totale === 0){
+    wrap.innerHTML = '<div class="no-data">nessuna esposizione aperta</div>';
+    return;
+  }
+  if(!wrap.querySelector('canvas')) wrap.innerHTML = '<canvas id="c-aging"></canvas>';
+ 
+  const colors = [
+    'rgba(79,142,247,0.6)',   // a scadere
+    'rgba(245,158,11,0.55)',  // 0-30
+    'rgba(245,158,11,0.75)',  // 30-60
+    'rgba(248,113,113,0.65)', // 60-90
+    'rgba(248,113,113,0.85)', // >90
+  ];
+ 
+  charts.aging = new Chart(document.getElementById('c-aging').getContext('2d'), {
+    type:'bar',
+    data:{
+      labels: Object.keys(buckets),
+      datasets:[{
+        data: Object.values(buckets),
+        backgroundColor: colors,
+        borderWidth: 0,
+        borderRadius: 4,
+      }]
+    },
+    options:{
+      indexAxis:'y',
+      responsive:true, maintainAspectRatio:false,
+      plugins:{legend:{display:false}, tooltip:{callbacks:{
+        label: c => eurFull(c.parsed.x) + '  (' + (c.parsed.x/totale*100).toFixed(0) + '%)'
+      }}},
+      scales:{
+        x:{ticks:{color:'#6b7280',font:{family:'monospace',size:10},callback:v => eur(v)}, grid:{color:'rgba(255,255,255,0.04)'}},
+        y:{ticks:{color:'#6b7280',font:{family:'monospace',size:10}}, grid:{display:false}}
+      }
+    }
+  });
+}
+ 
+function statusBadge(r){
+  if(r.Stato === 'paid')              return '<span class="status status-paid">incassata</span>';
+  if(r.Scaduto)                       return '<span class="status status-overdue">scaduta</span>';
+  if(r.Stato === 'partial')           return '<span class="status status-partial">parziale</span>';
+  if(r.Stato === 'open')              return '<span class="status status-open">aperta</span>';
+  if(r.Stato === 'no_payments_plan')  return '<span class="status status-noplan">no piano</span>';
+  return '<span class="status status-noplan">—</span>';
+}
+ 
+function giorniCell(r){
+  if(r.Stato === 'paid' && r.Giorni_Incasso != null){
+    return '<td class="gg paid">' + r.Giorni_Incasso + ' gg</td>';
+  }
+  if(r.Scaduto && r.Giorni_Scaduto != null){
+    return '<td class="gg late">−' + r.Giorni_Scaduto + ' gg</td>';
+  }
+  return '<td class="gg">—</td>';
+}
+ 
 function renderTable(){
   const tb = document.getElementById('tbody');
-  const sorted = [...filtered].sort((a,b) => {
-    let va = a[sortKey], vb = b[sortKey];
+ 
+  // Sort key speciale: _giorni → ordina per Giorni_Incasso (paid) o -Giorni_Scaduto (overdue)
+  const sortFn = (a, b) => {
+    let va, vb;
+    if(sortKey === '_giorni'){
+      va = a.Stato === 'paid' ? a.Giorni_Incasso : (a.Scaduto ? -a.Giorni_Scaduto : null);
+      vb = b.Stato === 'paid' ? b.Giorni_Incasso : (b.Scaduto ? -b.Giorni_Scaduto : null);
+    } else {
+      va = a[sortKey]; vb = b[sortKey];
+    }
     if(va instanceof Date) va = va.getTime();
     if(vb instanceof Date) vb = vb.getTime();
     if(typeof va === 'string') va = va.toLowerCase();
@@ -404,30 +577,32 @@ function renderTable(){
     if(va == null) return 1;
     if(vb == null) return -1;
     return va < vb ? -sortDir : va > vb ? sortDir : 0;
-  });
-
+  };
+  const sorted = [...filtered].sort(sortFn);
+ 
   document.querySelectorAll('th').forEach(th => th.classList.remove('sort-asc','sort-desc'));
   const activeTh = document.querySelector(`th[data-k="${sortKey}"]`);
   if(activeTh) activeTh.classList.add(sortDir === 1 ? 'sort-asc' : 'sort-desc');
-
+ 
   if(!sorted.length){
-    tb.innerHTML = '<tr><td colspan="7" class="no-data">nessuna fattura nel periodo selezionato</td></tr>';
+    tb.innerHTML = '<tr><td colspan="8" class="no-data">nessuna fattura nel periodo selezionato</td></tr>';
   } else {
     tb.innerHTML = sorted.map(r => `
       <tr>
-        <td class="id">${r.INVOICE_ID}</td>
+        <td class="id">${escapeHtml(r.INVOICE_ID)}</td>
         <td>${fmtDate(r.Date)}</td>
         <td><span class="pill">${escapeHtml(r.customer)}</span></td>
         <td class="desc">${escapeHtml(r.description)}</td>
-        <td class="num">${eurFull(r.net)}</td>
-        <td class="num">${eurFull(r.vat)}</td>
         <td class="num"><b>${eurFull(r.gross)}</b></td>
+        <td>${statusBadge(r)}</td>
+        ${giorniCell(r)}
+        <td class="num">${r.Importo_Aperto > 0 ? eurFull(r.Importo_Aperto) : '—'}</td>
       </tr>
     `).join('');
   }
   document.getElementById('tbl-count').textContent = sorted.length + ' righe';
 }
-
+ 
 boot();
 </script>
 </body>
