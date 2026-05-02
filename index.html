@@ -101,7 +101,7 @@ tr:hover td{background:var(--surface2)}
   <div class="kpi-grid" id="kpis"></div>
  
   <div class="card">
-    <div class="card-title">Fatturato vs <b>incassato per mese</b></div>
+    <div class="card-title">Stato fatture per <b>mese di emissione</b></div>
     <div class="chart-wrap" style="height:280px"><canvas id="c-trend"></canvas></div>
   </div>
  
@@ -148,7 +148,7 @@ tr:hover td{background:var(--surface2)}
  
 // ID del foglio Google Sheet (la stringa tra /d/ e /edit nell'URL).
 // Requisito: foglio condiviso come "Chiunque con il link → Visualizzatore".
-const SHEET_ID = '1Hnh9GkMXigTwCKs92ts3H8N1TvZUN1s4_WT7HKXhfRg';
+const SHEET_ID = 'INSERISCI_QUI_ID_DEL_FOGLIO';
  
 // Nome esatto del tab.
 const SHEET_TAB = 'Fatture Emesse';
@@ -376,61 +376,87 @@ function renderChartTrend(){
   if(charts.trend) charts.trend.destroy();
   const wrap = document.getElementById('c-trend').parentElement;
  
-  // Fatturato per mese (basato su Date)
-  const byEmesso = {};
+  // Per ogni mese di emissione, scomposizione del fatturato per stato attuale.
+  // Ogni barra ha 4 segmenti: incassato, da incassare (non scaduto), scaduto, non tracciato.
+  // La somma dei 4 = fatturato lordo emesso quel mese.
+  const byMese = {};
   filtered.forEach(r => {
     if(!r.Year || !r.month) return;
     const k = r.Year + '-' + String(r.month).padStart(2,'0');
-    byEmesso[k] = (byEmesso[k] || 0) + r.gross;
+    if(!byMese[k]) byMese[k] = {incassato:0, daIncassare:0, scaduto:0, nonTracciato:0};
+ 
+    if(r.Stato === 'no_payments_plan'){
+      byMese[k].nonTracciato += r.gross;
+    } else {
+      byMese[k].incassato   += r.Importo_Incassato;
+      if(r.Scaduto) byMese[k].scaduto     += r.Importo_Aperto;
+      else          byMese[k].daIncassare += r.Importo_Aperto;
+    }
   });
  
-  // Incassato per mese (basato su Data_Incasso)
-  const byIncassato = {};
-  filtered.forEach(r => {
-    if(!r.Data_Incasso || !r.Importo_Incassato) return;
-    const k = r.Data_Incasso.getFullYear() + '-' + String(r.Data_Incasso.getMonth()+1).padStart(2,'0');
-    byIncassato[k] = (byIncassato[k] || 0) + r.Importo_Incassato;
-  });
- 
-  const allKeys = [...new Set([...Object.keys(byEmesso), ...Object.keys(byIncassato)])].sort();
-  if(!allKeys.length){
+  const keys = Object.keys(byMese).sort();
+  if(!keys.length){
     wrap.innerHTML = '<div class="no-data">nessun dato nel periodo selezionato</div>';
     return;
   }
   if(!wrap.querySelector('canvas')) wrap.innerHTML = '<canvas id="c-trend"></canvas>';
  
+  const labels = keys.map(k => { const [y,m] = k.split('-'); return MESI[+m-1] + " '" + y.slice(2); });
+ 
   charts.trend = new Chart(document.getElementById('c-trend').getContext('2d'), {
     type:'bar',
     data:{
-      labels: allKeys.map(k => { const [y,m] = k.split('-'); return MESI[+m-1] + " '" + y.slice(2); }),
+      labels: labels,
       datasets:[
         {
-          label: 'Fatturato emesso',
-          data: allKeys.map(k => byEmesso[k] || 0),
-          backgroundColor: 'rgba(79,142,247,0.55)',
-          borderColor: 'rgba(79,142,247,1)',
-          borderWidth: 1,
-          borderRadius: 4,
+          label: 'Incassato',
+          data: keys.map(k => byMese[k].incassato),
+          backgroundColor: 'rgba(52,211,153,0.7)',
+          borderWidth: 0,
+          stack: 's',
         },
         {
-          label: 'Incassato',
-          data: allKeys.map(k => byIncassato[k] || 0),
-          backgroundColor: 'rgba(52,211,153,0.55)',
-          borderColor: 'rgba(52,211,153,1)',
-          borderWidth: 1,
-          borderRadius: 4,
+          label: 'Da incassare',
+          data: keys.map(k => byMese[k].daIncassare),
+          backgroundColor: 'rgba(245,158,11,0.7)',
+          borderWidth: 0,
+          stack: 's',
+        },
+        {
+          label: 'Scaduto',
+          data: keys.map(k => byMese[k].scaduto),
+          backgroundColor: 'rgba(248,113,113,0.7)',
+          borderWidth: 0,
+          stack: 's',
+        },
+        {
+          label: 'Non tracciato',
+          data: keys.map(k => byMese[k].nonTracciato),
+          backgroundColor: 'rgba(107,114,128,0.5)',
+          borderWidth: 0,
+          stack: 's',
         }
       ]
     },
     options:{
       responsive:true, maintainAspectRatio:false,
       plugins:{
-        legend:{position:'top', labels:{color:'#e8eaf0', font:{family:'monospace', size:11}, boxWidth:12}},
-        tooltip:{callbacks:{label:c => c.dataset.label + ': ' + eurFull(c.parsed.y)}}
+        legend:{position:'top', labels:{color:'#e8eaf0', font:{family:'monospace', size:11}, boxWidth:12, padding:14}},
+        tooltip:{
+          callbacks:{
+            label: c => c.dataset.label + ': ' + eurFull(c.parsed.y),
+            footer: items => {
+              const tot = items.reduce((s,i) => s + i.parsed.y, 0);
+              return 'Totale mese: ' + eurFull(tot);
+            }
+          },
+          footerFont:{family:'monospace', size:11, weight:'normal'},
+          footerColor:'#e8eaf0'
+        }
       },
       scales:{
-        x:{ticks:{color:'#6b7280',font:{family:'monospace',size:10}}, grid:{display:false}},
-        y:{ticks:{color:'#6b7280',font:{family:'monospace',size:10},callback:v => eur(v)}, grid:{color:'rgba(255,255,255,0.04)'}}
+        x:{stacked:true, ticks:{color:'#6b7280',font:{family:'monospace',size:10}}, grid:{display:false}},
+        y:{stacked:true, ticks:{color:'#6b7280',font:{family:'monospace',size:10},callback:v => eur(v)}, grid:{color:'rgba(255,255,255,0.04)'}}
       }
     }
   });
